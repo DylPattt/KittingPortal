@@ -1,0 +1,72 @@
+{% extends "layout.html" %}
+{% block title %}Data quality · Kitting Portal{% endblock %}
+{% block content %}
+<h1>Data quality</h1>
+<p class="lede">Problems in the source spreadsheets. Fixing these at the source makes every other page more accurate.</p>
+
+<div class="summary-grid summary-4">
+    <div class="stat"><h3>Missing items, no BOM rows</h3><div class="stat-value {{ 'text-warn' if dq.no_bom }}">{{ dq.no_bom|length }}</div></div>
+    <div class="stat"><h3>Open lines {{ dq.stale_days }}+ days late</h3><div class="stat-value {{ 'text-warn' if dq.stale_total }}">{{ dq.stale_total }}</div></div>
+    <div class="stat"><h3>Supplier name variants</h3><div class="stat-value {{ 'text-warn' if dq.supplier_variants }}">{{ dq.supplier_variants|length }}</div></div>
+    <div class="stat"><h3>Non-numeric Qty / Rec’d</h3><div class="stat-value {{ 'text-warn' if bad_numbers }}">{{ stats.non_numeric_values if stats.non_numeric_values is defined else bad_numbers|length }}</div></div>
+</div>
+
+{% if stats.merged_columns %}<div class="flash">Duplicate column names were merged during the last load: {{ stats.merged_columns|join(', ') }}. Consider renaming them in the workbook.</div>{% endif %}
+
+<section class="panel">
+    <h2>Supplier name variants</h2>
+    <p class="muted">Spellings that look like the same vendor. {% if current_user.role == 'admin' %}Merging them combines their history on the Vendors and Materials pages; the spreadsheet itself is not changed.{% else %}An admin can merge these.{% endif %}</p>
+    {% for group in dq.supplier_variants %}
+        <div class="variant-group">
+            {% for key, n in group %}<span class="pill">{{ key }} <span class="muted">({{ n }})</span></span>{% endfor %}
+            {% if current_user.role == 'admin' %}
+            {% for key, n in group[1:] %}
+            <form method="post" action="{{ url_for('main.vendor_alias') }}" class="inline-form">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <input type="hidden" name="alias_key" value="{{ key }}"><input type="hidden" name="canonical_key" value="{{ group[0][0] }}">
+                <button class="btn btn-sm">Merge “{{ key }}” into “{{ group[0][0] }}”</button>
+            </form>{% endfor %}{% endif %}
+        </div>
+    {% else %}<div class="empty">No variants found.</div>{% endfor %}
+
+    {% if aliases %}<details><summary>{{ aliases|length }} merges in place</summary>
+        <table class="data-table data-table-sm">{% for a in aliases %}<tr><td>{{ a.alias_key }} → {{ a.canonical_key }}</td><td class="muted">{{ a.created_by or '' }} {{ a.created_at }}</td>
+            <td>{% if current_user.role == 'admin' %}<form method="post" action="{{ url_for('main.vendor_alias_delete') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="alias_key" value="{{ a.alias_key }}"><button class="btn btn-sm">Undo</button></form>{% endif %}</td></tr>{% endfor %}</table>
+    </details>{% endif %}
+</section>
+
+<section class="panel">
+    <h2>Projects listing missing items but with no BOM rows</h2>
+    {% if dq.no_bom %}<div class="table-wrap"><table class="data-table data-table-sm">
+        <thead><tr><th>Project</th><th>REQ</th><th class="num">Missing</th><th>File name in the on-hand list</th></tr></thead>
+        <tbody>{% for p in dq.no_bom %}<tr><td>{{ p.project_number }}</td><td>{{ p.req or '' }}</td><td class="num">{{ p.remaining_items }}</td><td class="muted">{{ p.excel_file }}</td></tr>{% endfor %}</tbody>
+    </table></div><p class="muted">Usually the BOM file was never added to the combined BOM workbook, or it was added under a different name.</p>
+    {% else %}<div class="empty">None.</div>{% endif %}
+</section>
+
+<section class="panel">
+    <h2>Open lines more than {{ dq.stale_days }} days late</h2>
+    <p class="muted">Often parts that arrived but were never marked received. Showing up to 150 of {{ dq.stale_total }}.</p>
+    {% if dq.stale %}<div class="table-wrap"><table class="data-table data-table-sm">
+        <thead><tr><th class="num">Days late</th><th>Part</th><th>Description</th><th>Project</th><th>PO</th></tr></thead>
+        <tbody>{% for r in dq.stale %}<tr><td class="num text-bad">{{ r.days_late }}</td><td>{{ r.part_no or '–' }}</td><td>{{ r.description or '' }}</td>
+            <td><a href="{{ url_for('main.projects', select=r.project_id) }}">{{ r.project_number }}</a></td>
+            <td>{% if r.po %}<a href="{{ url_for('main.po', po=r.po) }}">{{ r.po }}</a>{% endif %}</td></tr>{% endfor %}</tbody>
+    </table></div>{% else %}<div class="empty">None.</div>{% endif %}
+</section>
+
+<section class="panel">
+    <h2>Other checks</h2>
+    <div class="table-wrap"><table class="data-table data-table-sm"><tbody>
+        <tr><td>Open lines with no due date</td><td class="num">{{ dq.open_no_due }}</td></tr>
+        <tr><td>Open lines with no part number</td><td class="num">{{ dq.open_no_part }}</td></tr>
+        <tr><td>Open lines with no supplier</td><td class="num">{{ dq.open_no_supplier }}</td></tr>
+        <tr><td>BOM source files that match no project</td><td class="num">{{ unmatched|length }}</td></tr>
+        {% for r in dq.dup_reqs %}<tr><td>REQ {{ r.req }} is shared by {{ r.n }} projects: {{ r.projects }}</td><td class="num">{{ r.n }}</td></tr>{% endfor %}
+    </tbody></table></div>
+    {% if bad_numbers %}<details><summary>Non-numeric Qty / Rec’d values (counted as 0)</summary>
+        <table class="data-table data-table-sm"><thead><tr><th>Column</th><th>Value</th><th>Part</th><th>File</th></tr></thead>
+        <tbody>{% for b in bad_numbers %}<tr><td>{{ b.column }}</td><td>“{{ b.value }}”</td><td>{{ b.part }}</td><td class="muted">{{ b.source }}</td></tr>{% endfor %}</tbody></table>
+    </details>{% endif %}
+</section>
+{% endblock %}

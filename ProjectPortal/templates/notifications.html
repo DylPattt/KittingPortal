@@ -1,0 +1,12 @@
+{% extends "layout.html" %}
+{% block title %}Notifications · Kitting Portal{% endblock %}
+{% block content %}
+<div class="section-head"><h1>Notifications</h1>
+{% if rows %}<form method="post"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn btn-sm">Mark all read</button></form>{% endif %}</div>
+{% for n in rows %}
+    <div class="note {{ '' if n.is_read else 'note-new' }}">
+        {% if n.link and n.link.startswith('/') %}<a href="{{ n.link }}">{{ n.message }}</a>{% else %}{{ n.message }}{% endif %}
+        <div class="muted">{{ n.created_at }}</div>
+    </div>
+{% else %}<div class="empty">No notifications.</div>{% endfor %}
+{% endblock %}

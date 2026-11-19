@@ -1,0 +1,77 @@
+{% extends "layout.html" %}
+{% block title %}Admin · Kitting Portal<section class="panel">
+    <h2>Activity log</h2>
+    {% if audit_rows %}<div class="table-wrap"><table class="data-table data-table-sm">
+        <thead><tr><th>When</th><th>User</th><th>Action</th><th>Detail</th></tr></thead>
+        <tbody>{% for a in audit_rows %}<tr><td>{{ a.at }}</td><td>{{ a.username }}</td><td>{{ a.action }}</td><td>{{ a.detail or '' }}</td></tr>{% endfor %}</tbody>
+    </table></div>{% else %}<div class="empty">No activity yet.</div>{% endif %}
+</section>
+{% endblock %}
+{% block content %}
+<h1>Admin</h1>
+
+<section class="panel">
+    <div class="section-head"><h2>Data refresh</h2>
+        <form method="post" action="{{ url_for('main.admin_refresh') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+            <button class="btn btn-primary">Refresh now</button></form></div>
+    <p class="muted">Last successful refresh: {{ last_refresh or "never" }}. Status: {{ refresh_status or "–" }} {{ refresh_message }}</p>
+    {% if stats %}<p class="muted">{{ stats.projects }} projects · {{ "{:,}".format(stats.bom_lines) }} BOM lines ·
+        matched by exact name {{ stats.matches.exact }}, forgiving name {{ stats.matches.forgiving }}, project number {{ stats.matches.project_number }} ·
+        {{ stats.missing_items_but_no_bom_rows }} projects list missing items but have no BOM rows</p>{% endif %}
+    {% if unmatched %}<details><summary>{{ unmatched|length }} BOM source files matched no project</summary>
+        <ul>{% for u in unmatched %}<li>{{ u }}</li>{% endfor %}</ul></details>{% endif %}
+</section>
+
+<section class="panel">
+    <h2>Kit requests</h2>
+    {% if requests %}<div class="table-wrap"><table class="data-table">
+        <thead><tr><th>#</th><th>Project</th><th>Requested by</th><th>Note</th><th>When</th><th>Status</th></tr></thead>
+        <tbody>{% for k in requests %}<tr>
+            <td>{{ k.id }}</td>
+            <td><a href="{{ url_for('main.projects', select=k.project_id) }}">{{ k.project_number }}</a><div class="muted">{{ k.req or '' }}</div></td>
+            <td>{{ k.requester or "–" }}</td><td>{{ k.note or "" }}</td><td>{{ k.created_at }}</td>
+            <td><form method="post" action="{{ url_for('main.admin_request_status', kid=k.id) }}" class="inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                <select name="status" class="field field-sm">
+                    {% for s in ['requested','sent','cancelled'] %}<option {{ 'selected' if k.status == s }}>{{ s }}</option>{% endfor %}
+                </select><button class="btn btn-sm">Update</button></form></td>
+        </tr>{% endfor %}</tbody></table></div>
+    {% else %}<div class="empty">No kit requests yet.</div>{% endif %}
+</section>
+
+<section class="panel">
+    <h2>Users</h2>
+    <div class="table-wrap"><table class="data-table">
+        <thead><tr><th>User</th><th>Role</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody>{% for u in users %}<tr>
+            <td>{{ u.username }}<div class="muted">{{ u.email or '' }}</div></td><td>{{ u.role }}</td>
+            <td>{{ 'active' if u.active else 'disabled' }}</td>
+            <td><form method="post" action="{{ url_for('main.admin_users') }}" class="inline">
+                <input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="user_id" value="{{ u.id }}">
+                <select name="action" class="field field-sm">
+                    <option value="{{ 'deactivate' if u.active else 'activate' }}">{{ 'Disable' if u.active else 'Enable' }}</option>
+                    <option value="{{ 'make_user' if u.role == 'admin' else 'make_admin' }}">{{ 'Make regular user' if u.role == 'admin' else 'Make admin' }}</option>
+                    <option value="reset">Reset password →</option>
+                </select>
+                <input type="password" name="password" class="field field-sm" placeholder="New password (reset only)" autocomplete="new-password">
+                <button class="btn btn-sm">Apply</button></form></td>
+        </tr>{% endfor %}</tbody></table></div>
+
+    <h3 style="margin-top:20px">Add user</h3>
+    <form method="post" action="{{ url_for('main.admin_users') }}" class="inline">
+        <input type="hidden" name="_csrf" value="{{ csrf_token() }}"><input type="hidden" name="action" value="create">
+        <input class="field field-sm" name="username" placeholder="Username" required>
+        <input class="field field-sm" name="email" placeholder="Email (optional)" type="email">
+        <input class="field field-sm" name="password" type="password" placeholder="Password (8+ chars)" required autocomplete="new-password">
+        <select class="field field-sm" name="role"><option>user</option><option>admin</option></select>
+        <button class="btn btn-sm btn-primary">Add</button>
+    </form>
+</section>
+<section class="panel">
+    <h2>Activity log</h2>
+    {% if audit_rows %}<div class="table-wrap"><table class="data-table data-table-sm">
+        <thead><tr><th>When</th><th>User</th><th>Action</th><th>Detail</th></tr></thead>
+        <tbody>{% for a in audit_rows %}<tr><td>{{ a.at }}</td><td>{{ a.username }}</td><td>{{ a.action }}</td><td>{{ a.detail or '' }}</td></tr>{% endfor %}</tbody>
+    </table></div>{% else %}<div class="empty">No activity yet.</div>{% endif %}
+</section>
+{% endblock %}

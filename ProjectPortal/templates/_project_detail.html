@@ -1,0 +1,26 @@
+{# Shared detail panel: used by the Projects tab and the Map. Filled in by static/js/project_detail.js #}
+<h2 id="detail-project">Select a project</h2>
+<div class="detail-sub" id="detail-sub"></div>
+
+<div class="kpi-grid">
+    <div class="kpi"><h3>Completion</h3><div class="kpi-value" id="detail-completion">–</div></div>
+    <div class="kpi"><h3>Missing items</h3><div class="kpi-value" id="detail-remaining">–</div></div>
+    <div class="kpi"><h3>BOM length</h3><div class="kpi-value" id="detail-bom">–</div></div>
+</div>
+
+<div class="detail-section" id="kit-box" hidden></div>
+
+<div class="detail-section">
+    <div class="section-head">
+        <h3>Missing materials</h3>
+        <div class="toolbar-inline" id="shortage-tools" hidden>
+            <label class="check"><input type="checkbox" id="overdueOnly"> Overdue only</label>
+            <select id="shortageSort" class="field field-sm" aria-label="Sort shortages">
+                <option value="due">Due date</option><option value="late">Most late</option>
+                <option value="qty">Open qty</option><option value="part">Part no.</option>
+            </select>
+            <a class="btn btn-sm" id="csvLink" href="#">Export CSV</a>
+        </div>
+    </div>
+    <div id="material-list" aria-live="polite"><div class="empty">Select a project to view shortages.</div></div>
+</div>

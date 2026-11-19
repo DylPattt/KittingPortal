@@ -1,0 +1,41 @@
+{% extends "layout.html" %}
+{% block content %}
+<h1>Kitting Operations Portal</h1>
+<p class="lede">Projects, shortages, materials and vendors in one place.</p>
+
+<div class="summary-grid summary-4">
+    <div class="stat"><h3>Active projects</h3><div class="stat-value">{{ stats.projects }}</div></div>
+    <div class="stat"><h3>Open BOM lines</h3><div class="stat-value">{{ "{:,}".format(stats.open_lines) }}</div></div>
+    <div class="stat"><h3>Overdue lines</h3><div class="stat-value {{ 'text-bad' if stats.overdue_lines }}">{{ "{:,}".format(stats.overdue_lines) }}</div></div>
+    <div class="stat"><h3>Kits requested</h3><div class="stat-value">{{ stats.pending_kits }}</div></div>
+</div>
+
+{% if changes %}
+<section class="panel">
+    <h2>Since {{ changes.since }}</h2>
+    <p class="muted">{{ changes.changed }} projects changed: {{ changes.improved }} improved, {{ changes.slipped }} slipped.</p>
+    {% if changes.rows %}<div class="table-wrap"><table class="data-table">
+        <thead><tr><th>Project</th><th class="num">Completion</th><th class="num">Change</th><th class="num">Open lines</th><th class="num">Overdue lines</th></tr></thead>
+        <tbody>{% for r in changes.rows %}
+            {% set d = r.now_pct - r.before_pct %}
+            <tr><td><a href="{{ url_for('main.projects', select=r.id) }}">{{ r.project_number }}</a><div class="muted">{{ r.req or '' }}</div></td>
+                <td class="num">{{ "%.1f"|format(r.now_pct) }}%</td>
+                <td class="num {{ 'text-ok' if d > 0 else ('text-bad' if d < 0) }}">{{ "%+.1f"|format(d) }}</td>
+                <td class="num">{{ "%+d"|format(r.open_delta) }}</td>
+                <td class="num {{ 'text-bad' if r.overdue_delta > 0 }}">{{ "%+d"|format(r.overdue_delta) }}</td></tr>
+        {% endfor %}</tbody></table></div>{% endif %}
+</section>
+{% else %}
+<p class="muted">Day-over-day changes appear here after the portal has refreshed on two different days.</p>
+{% endif %}
+
+<div class="card-grid">
+    <a class="portal-card" href="{{ url_for('main.projects') }}">Projects</a>
+    <a class="portal-card" href="{{ url_for('main.critical') }}">Critical parts</a>
+    <a class="portal-card" href="{{ url_for('main.materials') }}">Materials</a>
+    <a class="portal-card" href="{{ url_for('main.vendors') }}">Vendors</a>
+    <a class="portal-card" href="{{ url_for('main.ready') }}">Ready to kit</a>
+    <a class="portal-card" href="{{ url_for('main.po') }}">Purchase orders</a>
+    <a class="portal-card" href="{{ url_for('main.data_quality') }}">Data quality</a>
+</div>
+{% endblock %}

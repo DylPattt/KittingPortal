@@ -1,0 +1,33 @@
+{% extends "layout.html" %}
+{% block title %}Materials · Kitting Portal{% endblock %}
+{% block content %}
+<h1>Materials</h1>
+<p class="lede">Every part on any BOM and where it was last purchased. Type to narrow the list.</p>
+
+<div class="toolbar">
+    <input type="search" id="matSearch" class="field" placeholder="Part number or description" aria-label="Search parts" autofocus>
+    <select id="matSupplier" class="field" aria-label="Last supplier">
+        <option value="">All suppliers</option>
+        {% for s in suppliers %}<option value="{{ s }}">{{ s }}</option>{% endfor %}
+    </select>
+    <select id="matSort" class="field" aria-label="Sort">
+        <option value="open">Most open qty</option><option value="recent">Most recently purchased</option>
+        <option value="uses">Used on most BOM lines</option><option value="part">Part number</option>
+    </select>
+    <label class="check"><input type="checkbox" id="matOpen"> Open qty only</label>
+</div>
+
+<div class="muted" id="matCount" aria-live="polite">Loading…</div>
+<div class="table-wrap" style="margin-top:8px">
+    <table class="data-table" id="matTable">
+        <thead><tr><th>Part</th><th>Description</th><th>Last supplier</th><th class="num">Last price</th><th>Last PO</th><th>Last due</th><th class="num">Lines</th><th class="num">Open qty</th></tr></thead>
+        <tbody></tbody>
+    </table>
+</div>
+<div class="pager">
+    <button class="btn btn-sm" id="matPrev">Previous</button>
+    <span class="muted" id="matPage"></span>
+    <button class="btn btn-sm" id="matNext">Next</button>
+</div>
+<script src="{{ url_for('static', filename='js/materials.js') }}"></script>
+{% endblock %}

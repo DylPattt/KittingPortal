@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block title %}Purchase orders · Kitting Portal{% endblock %}
+{% block content %}
+<h1>Purchase orders</h1>
+<p class="lede">Everything ordered on a PO, across projects. POs with the most open lines are listed first.</p>
+<form class="toolbar" method="get">
+    <input class="field" name="q" value="{{ q }}" placeholder="PO number" aria-label="Search PO">
+    <button class="btn" type="submit">Search</button>
+</form>
+{% if rows %}
+<div class="table-wrap"><table class="data-table">
+    <thead><tr><th>PO</th><th>Supplier</th><th class="num">Lines</th><th class="num">Open lines</th><th class="num">Projects</th><th>Latest due</th></tr></thead>
+    <tbody>{% for r in rows %}<tr>
+        <td><a href="{{ url_for('main.po', po=r.po) }}">{{ r.po }}</a></td><td>{{ r.supplier or "–" }}</td>
+        <td class="num">{{ r.lines }}</td><td class="num {{ 'text-bad' if r.open_lines }}">{{ r.open_lines }}</td>
+        <td class="num">{{ r.projects }}</td><td>{{ r.last_due or "–" }}</td>
+    </tr>{% endfor %}</tbody></table></div>
+{% else %}<div class="empty">No purchase orders match.</div>{% endif %}
+{% endblock %}

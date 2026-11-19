@@ -1,0 +1,17 @@
+{% extends "layout.html" %}
+{% block title %}{{ po }} · Kitting Portal{% endblock %}
+{% block content %}
+<p><a href="{{ url_for('main.po') }}">All purchase orders</a></p>
+<h1>{{ po }}</h1>
+{% set open_n = lines|selectattr('open_qty', 'gt', 0)|list|length %}
+<p class="lede">{{ lines[0].supplier or "Unknown supplier" }} · {{ lines|length }} lines · {{ open_n }} still open</p>
+<div class="table-wrap"><table class="data-table">
+    <thead><tr><th>Part</th><th>Description</th><th>Project</th><th class="num">Qty</th><th class="num">Received</th><th class="num">Open</th><th>Due</th></tr></thead>
+    <tbody>{% for l in lines %}<tr>
+        <td>{{ l.part_no or "–" }}</td><td>{{ l.description or "" }}</td>
+        <td>{% if l.project_id %}<a href="{{ url_for('main.projects', select=l.project_id) }}">{{ l.project_number }}</a>{% else %}<span class="muted">unmatched</span>{% endif %}</td>
+        <td class="num">{{ "%g"|format(l.qty) }}</td><td class="num">{{ "%g"|format(l.received) }}</td>
+        <td class="num {{ 'text-bad' if l.overdue }}">{{ "%g"|format(l.open_qty) if l.open_qty > 0 else "–" }}</td>
+        <td class="{{ 'text-bad' if l.overdue }}">{{ l.due_date or "–" }}</td>
+    </tr>{% endfor %}</tbody></table></div>
+{% endblock %}

@@ -1,0 +1,49 @@
+{% extends "layout.html" %}
+{% block title %}Vendors · Kitting Portal{% endblock %}
+{% block content %}
+<h1>Vendors</h1>
+<p class="lede">Built from the latest purchasing data. {% if current_user.role == 'admin' %}Admins can add contact details to any vendor.{% endif %}</p>
+<input type="search" id="vendorSearch" class="field" placeholder="Filter vendors" aria-label="Filter vendors" style="max-width:420px;margin-bottom:16px">
+<div class="table-wrap"><table class="data-table" id="vendorTable">
+    <thead><tr><th>Vendor</th><th>Contact</th><th class="num">Parts</th><th class="num">Open lines</th><th class="num">Last price</th><th>Last due</th></tr></thead>
+    <tbody>
+    {% for v in vendors %}
+        <tr id="v-{{ v.supplier_key|replace(' ', '-') }}">
+            <td><strong>{{ v.display_name or v.seen_as }}</strong>
+                {% if v.website and v.website.startswith(('https://','http://')) %}<div><a href="{{ v.website }}" target="_blank" rel="noopener noreferrer">website</a></div>{% endif %}</td>
+            <td>{{ [v.contact, v.phone, v.email]|select|join(' · ') or "–" }}
+                {% if v.notes %}<div class="muted">{{ v.notes }}</div>{% endif %}
+                {% if current_user.role == 'admin' %}
+                <details><summary>Edit</summary>
+                <form method="post" action="{{ url_for('main.vendor_save') }}" class="stack">
+                    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                    <input type="hidden" name="supplier_key" value="{{ v.supplier_key }}">
+                    <input class="field field-sm" name="display_name" placeholder="Display name" value="{{ v.display_name or '' }}">
+                    <input class="field field-sm" name="contact" placeholder="Contact" value="{{ v.contact or '' }}">
+                    <input class="field field-sm" name="phone" placeholder="Phone" value="{{ v.phone or '' }}">
+                    <input class="field field-sm" name="email" placeholder="Email" value="{{ v.email or '' }}">
+                    <input class="field field-sm" name="website" placeholder="https://…" value="{{ v.website or '' }}">
+                    <textarea class="field field-sm" name="notes" placeholder="Notes">{{ v.notes or '' }}</textarea>
+                    <button class="btn btn-sm btn-primary">Save</button>
+                </form>
+                <form method="post" action="{{ url_for('main.vendor_alias') }}" class="stack">
+                    <input type="hidden" name="_csrf" value="{{ csrf_token() }}">
+                    <input type="hidden" name="alias_key" value="{{ v.supplier_key }}">
+                    <input class="field field-sm" name="canonical_key" list="vendorKeys" placeholder="Merge this vendor into…" required>
+                    <button class="btn btn-sm" onclick="return confirm('Merge {{ v.supplier_key|e }} into the chosen vendor? Data reloads afterwards.')">Merge</button>
+                </form></details>
+                {% endif %}</td>
+            <td class="num">{{ v.parts }}</td><td class="num">{{ v.open_lines or 0 }}</td>
+            <td class="num">{{ "$%.2f"|format(v.last_price) if v.last_price is not none else "–" }}</td>
+            <td>{{ v.last_due or "–" }}</td>
+        </tr>
+    {% endfor %}
+    </tbody></table></div>
+<datalist id="vendorKeys">{% for v in vendors %}<option value="{{ v.supplier_key }}">{% endfor %}</datalist>
+<script>
+document.getElementById("vendorSearch").addEventListener("input", e => {
+    const q = e.target.value.toLowerCase();
+    document.querySelectorAll("#vendorTable tbody tr").forEach(r => { r.hidden = !r.textContent.toLowerCase().includes(q); });
+});
+</script>
+{% endblock %}

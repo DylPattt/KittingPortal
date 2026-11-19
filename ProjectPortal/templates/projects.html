@@ -1,0 +1,61 @@
+{% extends "layout.html" %}
+{% block title %}Projects · Kitting Portal{% endblock %}
+{% block content %}
+<h1>Projects</h1>
+
+<div class="summary-grid summary-4">
+    <div class="stat"><h3>Total projects</h3><div class="stat-value">{{ total }}</div></div>
+    <div class="stat"><h3>Average completion</h3><div class="stat-value">{{ "%.1f"|format(avg) }}%</div></div>
+    <div class="stat"><h3>Total missing items</h3><div class="stat-value">{{ "{:,}".format(missing) }}</div></div>
+    <div class="stat"><h3>Overdue lines</h3><div class="stat-value {{ 'text-bad' if overdue }}">{{ "{:,}".format(overdue) }}</div></div>
+</div>
+
+<div class="toolbar">
+    <input type="search" id="projectSearch" class="field" placeholder="Search project number or REQ" aria-label="Search projects">
+    <select id="statusFilter" class="field" aria-label="Filter by status">
+        <option value="">All statuses</option><option value="bad">Behind</option>
+        <option value="warn">At risk</option><option value="ok">On track</option>
+        <option value="overdue">Has overdue parts</option>
+    </select>
+    <select id="projectSort" class="field" aria-label="Sort projects">
+        <option value="completion">Lowest completion first</option>
+        <option value="remaining">Most missing first</option>
+        <option value="overdue">Most overdue first</option>
+        <option value="name">Project number</option>
+    </select>
+</div>
+
+<div class="project-layout">
+    <div class="project-list" id="projectList">
+    {% for p in projects %}
+        {% set c = p["completion"] %}
+        {% set status = "ok" if c >= 95 else ("warn" if c >= 80 else "bad") %}
+        <div class="project-card status-{{ status }}" tabindex="0"
+             data-id="{{ p['id'] }}" data-project="{{ p['project_number'] }}" data-req="{{ p['req'] or '' }}"
+             data-completion="{{ c }}" data-remaining="{{ p['remaining_items'] }}" data-bom="{{ p['bom_length'] }}"
+             data-overdue="{{ p['overdue_lines'] }}" data-status="{{ status }}" data-me="{{ p['me_ee'] or '' }}"
+             data-url="{{ p['sharepoint_url'] or '' }}" data-expected="{{ p['expected_complete'] or '' }}" data-cart="{{ p['cart_name'] or '' }}" data-kit="{{ p['kit_status'] or '' }}"
+             data-search="{{ (p['project_number'] ~ ' ' ~ (p['req'] or ''))|lower }}">
+            <div class="project-header">
+                <div class="project-title">{{ p["project_number"] }}</div>
+                <div class="completion-badge"><span class="sr-only">{{ {"ok":"On track","warn":"At risk","bad":"Behind"}[status] }}: </span>{{ "%.1f"|format(c) }}%</div>
+            </div>
+            <div class="project-subtitle">{{ p["req"] or "No REQ" }}</div>
+            <div class="project-missing">
+                {{ p["remaining_items"] }} missing
+                {% if p["overdue_lines"] %}<span class="text-bad"> · {{ p["overdue_lines"] }} overdue</span>{% endif %}
+                {% if p["kit_status"] %}<span class="pill">kit {{ p["kit_status"] }}</span>{% endif %}
+            </div>
+        </div>
+    {% else %}
+        <div class="empty">No projects loaded. An admin can run a refresh from the Admin page.</div>
+    {% endfor %}
+    </div>
+
+    <div class="project-details" id="details">
+        {% include "_project_detail.html" %}
+    </div>
+</div>
+<script src="{{ url_for('static', filename='js/project_detail.js') }}"></script>
+<script src="{{ url_for('static', filename='js/projects.js') }}"></script>
+{% endblock %}

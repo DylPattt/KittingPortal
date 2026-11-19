@@ -1,0 +1,82 @@
+{% extends "layout.html" %}
+{% block title %}Map · Kitting Portal{% endblock %}
+{% block content %}
+<h1>Map</h1>
+
+<div class="toolbar">
+    <input type="search" id="mapSearch" class="field" placeholder="Find a project, REQ or cart" aria-label="Find a project on the map">
+    <div class="zoom-group" role="group" aria-label="Zoom">
+        <button class="btn btn-sm" id="zoomOut" aria-label="Zoom out">−</button>
+        <span class="zoom-level" id="zoomLevel">100%</span>
+        <button class="btn btn-sm" id="zoomIn" aria-label="Zoom in">+</button>
+        <button class="btn btn-sm" id="zoomFit">Fit</button>
+    </div>
+    <button class="btn btn-sm" id="panelToggle" aria-pressed="false">Hide details</button>
+    {% if current_user.role == 'admin' %}
+    <button class="btn" id="editToggle" aria-pressed="false">Edit layout</button>
+    {% endif %}
+</div>
+
+{% if current_user.role == 'admin' %}
+<div class="edit-tools" id="editTools" hidden>
+    <button class="btn btn-sm btn-primary" id="addCart">Add cart</button>
+    <span class="tool-sep"></span>
+    <label class="inline-label">Add <input class="field field-sm num-input" id="bulkCount" type="number" min="1" max="200" value="10"></label>
+    <label class="inline-label">carts named <input class="field field-sm" id="bulkPrefix" value="Cart" style="width:90px"></label>
+    <label class="inline-label">starting at <input class="field field-sm num-input" id="bulkStart" type="number" min="0" value="1"></label>
+    <button class="btn btn-sm" id="bulkAdd">Add</button>
+    <span class="tool-sep"></span>
+    <button class="btn btn-sm" id="arrange">Auto-arrange</button>
+    <span class="tool-sep"></span>
+    <label class="inline-label">Map size <input class="field field-sm num-input" id="mapW" type="number" step="100"></label>
+    <label class="inline-label">× <input class="field field-sm num-input" id="mapH" type="number" step="100"></label>
+    <button class="btn btn-sm" id="resizeMap">Apply</button>
+</div>
+{% endif %}
+<p class="muted" id="mapHint"></p>
+
+<div class="map-layout" id="mapLayout">
+    <div class="map-wrap" id="mapWrap">
+        <div class="map-sizer" id="mapSizer">
+            <div class="map-canvas" id="mapCanvas" aria-label="Floor map of carts"></div>
+        </div>
+    </div>
+
+    <aside class="project-details map-side">
+        <div id="detailPanel">
+            {% include "_project_detail.html" %}
+        </div>
+
+        {% if current_user.role == 'admin' %}
+        <div id="cartEditor" hidden>
+            <h2>Edit cart</h2>
+            <div class="stack-wide">
+                <label class="field-label">Name <input class="field" id="cartName" maxlength="60"></label>
+                <label class="field-label">Notes <textarea class="field" id="cartNotes" maxlength="500" placeholder="Location, owner, anything useful"></textarea></label>
+                <div class="inline"><button class="btn btn-primary btn-sm" id="cartSave">Save</button>
+                    <span class="muted" id="cartSaved"></span></div>
+            </div>
+
+            <div class="detail-section">
+                <h3>Projects on this cart</h3>
+                <div id="cartProjects"></div>
+                <div class="inline" style="margin-top:10px">
+                    <input class="field field-sm" id="assignInput" list="projectOptions" placeholder="Type a project number or REQ" aria-label="Project to add" style="flex:1">
+                    <button class="btn btn-sm" id="assignBtn">Add to cart</button>
+                </div>
+                <datalist id="projectOptions"></datalist>
+                <div class="muted" id="assignMsg"></div>
+            </div>
+
+            <div class="detail-section">
+                <button class="btn btn-sm btn-danger" id="cartDelete">Delete cart</button>
+                <span class="muted">Projects on it become unassigned; nothing else is affected.</span>
+            </div>
+        </div>
+        {% endif %}
+    </aside>
+</div>
+
+<script src="{{ url_for('static', filename='js/project_detail.js') }}"></script>
+<script src="{{ url_for('static', filename='js/map.js') }}"></script>
+{% endblock %}

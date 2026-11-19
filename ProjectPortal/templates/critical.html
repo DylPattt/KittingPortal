@@ -1,0 +1,31 @@
+{% extends "layout.html" %}
+{% block title %}Critical parts · Kitting Portal{% endblock %}
+{% block content %}
+<h1>Critical parts</h1>
+<p class="lede">Open lines that are past their due date, most overdue first.</p>
+<form class="toolbar" method="get">
+    <input class="field" name="q" value="{{ q }}" placeholder="Part, description, project or REQ" aria-label="Search">
+    <select class="field" name="min_days" aria-label="Minimum days late">
+        {% for d, label in [(0,'Any lateness'),(7,'7+ days late'),(30,'30+ days late'),(60,'60+ days late')] %}
+        <option value="{{ d }}" {{ 'selected' if d == min_days }}>{{ label }}</option>{% endfor %}
+    </select>
+    <button class="btn" type="submit">Filter</button>
+</form>
+{% if rows %}
+<div class="table-wrap"><table class="data-table">
+    <thead><tr><th class="num">Days late</th><th>Part</th><th>Description</th><th class="num">Open qty</th><th>Project</th><th>Supplier / PO</th><th>Due</th></tr></thead>
+    <tbody>
+    {% for r in rows %}
+        <tr>
+            <td class="num text-bad"><strong>{{ r.days_late }}</strong></td>
+            <td>{{ r.part_no or "–" }}</td><td>{{ r.description or "" }}</td>
+            <td class="num">{{ "%g"|format(r.open_qty) }}</td>
+            <td><a href="{{ url_for('main.projects', select=r.project_id) }}">{{ r.project_number }}</a><div class="muted">{{ r.req or "" }}</div></td>
+            <td>{{ r.supplier or "–" }}<div class="muted">{% if r.po %}<a href="{{ url_for('main.po', po=r.po) }}">{{ r.po }}</a>{% endif %}</div></td>
+            <td>{{ r.due_date }}</td>
+        </tr>
+    {% endfor %}
+    </tbody></table></div>
+<p class="muted">Showing up to 200 lines.</p>
+{% else %}<div class="empty">No overdue lines match.</div>{% endif %}
+{% endblock %}

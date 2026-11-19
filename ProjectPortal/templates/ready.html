@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+{% block title %}Ready to kit · Kitting Portal{% endblock %}
+{% block content %}
+<h1>Ready to kit</h1>
+<p class="lede">Projects at or above the completion threshold, closest to done first.</p>
+<form class="toolbar" method="get">
+    <select class="field" name="min" aria-label="Minimum completion" onchange="this.form.submit()">
+        {% for m in [100, 95, 90, 80] %}<option value="{{ m }}" {{ 'selected' if m == min_c }}>{{ m }}%{{ '' if m == 100 else ' or more' }}</option>{% endfor %}
+    </select>
+</form>
+{% if rows %}
+<div class="table-wrap"><table class="data-table">
+    <thead><tr><th>Project</th><th class="num">Completion</th><th class="num">Open lines</th><th>Last open part due</th><th>Kit</th></tr></thead>
+    <tbody>{% for r in rows %}<tr>
+        <td><a href="{{ url_for('main.projects', select=r.id) }}">{{ r.project_number }}</a><div class="muted">{{ r.req or '' }}</div></td>
+        <td class="num">{{ "%.1f"|format(r.completion) }}%</td>
+        <td class="num">{{ r.open_lines }}{% if not r.bom_rows %}<div class="muted">no BOM rows</div>{% endif %}</td>
+        <td>{% if r.open_lines == 0 %}<span class="text-ok">All parts in</span>
+            {% else %}{{ r.expected_complete or "–" }}{% if r.open_no_due %}<div class="muted">{{ r.open_no_due }} open line(s) have no due date</div>{% endif %}{% endif %}</td>
+        <td>{% if r.kit_status %}<span class="pill {{ 'pill-ok' if r.kit_status == 'sent' else 'pill-warn' }}">{{ r.kit_status }}</span>{% else %}<span class="muted">not requested</span>{% endif %}</td>
+    </tr>{% endfor %}</tbody></table></div>
+{% else %}<div class="empty">No projects at {{ min_c }}% or more.</div>{% endif %}
+{% endblock %}
