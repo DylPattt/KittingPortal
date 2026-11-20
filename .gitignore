@@ -1,0 +1,13 @@
+# Python
+__pycache__/
+*.pyc
+
+# Local data, database and secrets (never commit)
+ProjectPortal/data/
+ProjectPortal/instance/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+secret.key
+.env
